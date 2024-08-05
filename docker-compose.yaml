@@ -1,0 +1,62 @@
+networks:
+  seafight-network:
+    name: seafight-network
+    driver: bridge
+
+services:
+  seafight-api:
+    container_name: seafight-api
+    image: barabok/seafightsignalrserver-seafight-api
+    ports:
+      - 7222:7222
+    networks:
+      - seafight-network
+    environment:
+      - ASPNETCORE_URLS=http://+:7222
+
+  elasticsearch:
+    image: elasticsearch:7.16.1
+    ports:
+      - "9200:9200"
+    environment:
+      - xpack.monitoring.enabled=true
+      - xpack.watcher.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+    networks:
+      - seafight-network
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: kibana:7.16.1
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=elasticsearch:9200
+    networks:
+      - seafight-network
+    depends_on:
+      - elasticsearch
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    networks:
+      - seafight-network
+    # volumes:
+    #   - C:\Users\abarabanov\Docker\Prometheus:/etc/prometheus
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    networks:
+      - seafight-network
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  elasticsearch-data:
+  grafana-data:
